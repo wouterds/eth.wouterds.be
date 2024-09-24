@@ -13,6 +13,7 @@ services:
       - "traefik.http.routers.ethwouterdsbe-http.entrypoints=web"
       - "traefik.http.routers.ethwouterdsbe-http.middlewares=https-redirect"
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      - "traefik.docker.network=proxy"
     networks:
       - proxy
       - internal
@@ -73,5 +74,4 @@ networks:
   proxy:
     external: true
   internal:
-    name: eth-node
-    internal: true
+    name: eth-node_internal
