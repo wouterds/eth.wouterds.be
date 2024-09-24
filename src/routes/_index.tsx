@@ -1,5 +1,6 @@
 import type { MetaFunction } from '@remix-run/node';
 import { useLoaderData, useRevalidator } from '@remix-run/react';
+import { formatDistanceToNowStrict, fromUnixTime } from 'date-fns';
 import { useEffect } from 'react';
 
 import { getLatestBlock } from '~/services/geth-node';
@@ -21,7 +22,7 @@ export default function Index() {
   useEffect(() => {
     const interval = setInterval(() => {
       revalidate();
-    }, 1000);
+    }, 200);
 
     return () => clearInterval(interval);
   }, [revalidate]);
@@ -50,7 +51,9 @@ export default function Index() {
             Latest Block
           </h2>
           <p className="text-2xl font-bold">#{block.number.toLocaleString()}</p>
-          <p className="text-sm text-zinc-400">{block.timestamp} seconds ago</p>
+          <p className="text-sm text-zinc-400">
+            {formatDistanceToNowStrict(fromUnixTime(block.timestamp), { addSuffix: true })}
+          </p>
         </div>
 
         <div className="bg-zinc-800 p-6 rounded-lg shadow-lg">
