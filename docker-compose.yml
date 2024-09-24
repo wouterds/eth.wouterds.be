@@ -1,0 +1,69 @@
+services:
+  nginx:
+    container_name: be.wouterds.eth--nginx
+    mem_limit: 32mb
+    image: nginx:alpine
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.bewouterdseth.redirectscheme.scheme=https"
+      - "traefik.http.routers.bewouterdseth-http.rule=Host(`eth.wouterds.be`)"
+      - "traefik.http.routers.bewouterdseth-http.entrypoints=web"
+      - "traefik.http.routers.bewouterdseth-http.middlewares=bewouterdseth"
+      - "traefik.http.routers.bewouterdseth.rule=Host(`eth.wouterds.be`)"
+      - "traefik.http.routers.bewouterdseth.entrypoints=websecure"
+      - "traefik.http.routers.bewouterdseth.tls.certresolver=myhttpchallenge"
+    networks:
+      - proxy
+
+  geth:
+    image: ethereum/client-go
+    container_name: be.wouterds.eth--geth
+    mem_limit: 16gb
+    restart: unless-stopped
+    ports:
+      - "30303:30303/tcp"
+      - "30303:30303/udp"
+      - "8545:8545"
+    volumes:
+      - /data/eth-node.geth:/root/.ethereum
+      - ./jwt.hex:/root/.ethereum/jwt.hex
+    command:
+      - --http
+      - --http.addr=0.0.0.0
+      - --http.vhosts=*
+      - --http.api=eth,net,engine,admin
+      - --syncmode=full
+      - --datadir=/root/.ethereum
+      - --authrpc.addr=0.0.0.0
+      - --authrpc.port=8551
+      - --authrpc.vhosts=*
+      - --authrpc.jwtsecret=/root/.ethereum/jwt.hex
+      - --discovery.dns=eth.wouterds.be
+
+  lighthouse:
+    image: sigp/lighthouse
+    mem_limit: 16gb
+    container_name: be.wouterds.eth--lighthouse
+    restart: unless-stopped
+    ports:
+      - "9000:9000/tcp"
+      - "9000:9000/udp"
+    volumes:
+      - /data/eth-node.lighthouse:/root/.lighthouse
+      - ./jwt.hex:/root/.lighthouse/jwt.hex
+    command:
+      - lighthouse
+      - bn
+      - --network=mainnet
+      - --execution-endpoint=http://geth:8551
+      - --execution-jwt=/root/.lighthouse/jwt.hex
+      - --checkpoint-sync-url=https://beaconstate.info
+      - --http
+      - --http-address=0.0.0.0
+    depends_on:
+      - geth
+
+networks:
+  proxy:
+    external: true
