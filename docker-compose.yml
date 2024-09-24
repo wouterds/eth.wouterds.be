@@ -15,7 +15,7 @@ services:
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
     networks:
       - proxy
-      - eth-node
+      - internal
 
   geth:
     image: ethereum/client-go
@@ -42,7 +42,7 @@ services:
       - --authrpc.jwtsecret=/root/.ethereum/jwt.hex
       - --discovery.dns=eth.wouterds.be
     networks:
-      - eth-node
+      - internal
 
   lighthouse:
     image: sigp/lighthouse
@@ -67,11 +67,11 @@ services:
     depends_on:
       - geth
     networks:
-      - eth-node
+      - internal
 
 networks:
   proxy:
     external: true
-  eth-node:
+  internal:
     name: eth-node
     internal: true
