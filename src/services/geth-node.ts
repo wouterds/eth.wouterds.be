@@ -8,6 +8,10 @@ export const getLatestBlock = async () => {
   return provider.getBlock('latest');
 };
 
+export const getBlockByNumber = async (blockNumber: number) => {
+  return provider.getBlock(blockNumber);
+};
+
 export const getNetwork = async () => {
   return provider.getNetwork();
 };
