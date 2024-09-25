@@ -1,8 +1,8 @@
 import type { MetaFunction } from '@remix-run/node';
 import { json, useLoaderData, useRevalidator } from '@remix-run/react';
 import { usePrevious } from '@uidotdev/usehooks';
-import { format, formatDistanceToNowStrict, fromUnixTime } from 'date-fns';
-import { Block, formatUnits } from 'ethers';
+import { format, fromUnixTime } from 'date-fns';
+import { Block, formatUnits, Transaction } from 'ethers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { getLatestBlock, getNodeInfo } from '~/services/geth-node';
@@ -15,7 +15,14 @@ export const meta: MetaFunction = () => {
 export const loader = async () => {
   const [nodeInfo, block] = await Promise.all([getNodeInfo(), getLatestBlock()]);
 
-  return json({ block, nodeInfo });
+  return json({
+    block: JSON.parse(
+      JSON.stringify(block, (_key, value) =>
+        typeof value === 'bigint' ? value.toString() : value,
+      ),
+    ),
+    nodeInfo,
+  });
 };
 
 export default function Index() {
@@ -29,7 +36,7 @@ export default function Index() {
         return blocks;
       }
 
-      return [block, ...blocks].slice(0, 1000);
+      return [block, ...blocks].slice(0, 200);
     });
   }, []);
 
@@ -65,7 +72,7 @@ export default function Index() {
   }, [nodeInfo]);
 
   const address = useMemo(() => {
-    return `${nodeInfo.ip}:${nodeInfo.ports.discovery}`;
+    return `${nodeInfo.ip}:${nodeInfo.ports.listener}`;
   }, [nodeInfo]);
 
   const difficulty = useMemo(() => {
@@ -89,6 +96,26 @@ export default function Index() {
     return sorted;
   }, [blocks]);
 
+  const gasPrice = useMemo(() => {
+    let price: number;
+
+    if (block.baseFeePerGas) {
+      price = parseFloat(formatUnits(block.baseFeePerGas, 'gwei'));
+    } else if (block.gasPrice) {
+      price = parseFloat(formatUnits(block.gasPrice, 'gwei'));
+    } else if (block.transactions && block.transactions.length > 0) {
+      const totalGasPrice = block.transactions.reduce((sum: bigint, tx: Transaction) => {
+        return sum + BigInt(tx.gasPrice || 0);
+      }, BigInt(0));
+
+      price = parseFloat(formatUnits(totalGasPrice / BigInt(block.transactions.length), 'gwei'));
+    } else {
+      return '--';
+    }
+
+    return Math.round(price).toString();
+  }, [block]);
+
   return (
     <div className="flex-1 bg-zinc-900 text-zinc-100 p-8">
       <h1 className="text-3xl font-bold mb-8 text-teal-200">eth.wouterds.be</h1>
@@ -96,46 +123,34 @@ export default function Index() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="bg-zinc-800 p-6 rounded-lg shadow-lg">
           <h2 className="text-xl font-semibold mb-4 text-teal-200 flex items-center">Version</h2>
-          <p className="text-2xl font-bold font-mono">{nodeVersion.split('/')[1]}</p>
-          <p className="text-sm text-zinc-400 font-medium font-mono">{nodeVersion.split('/')[0]}</p>
+          <p className="text-2xl font-bold font-mono truncate">{nodeVersion}</p>
         </div>
 
         <div className="bg-zinc-800 p-6 rounded-lg shadow-lg">
           <h2 className="text-xl font-semibold mb-4 text-teal-200 flex items-center">Platform</h2>
-          <p className="text-2xl font-bold font-mono">{nodePlatform.split('/')[1]}</p>
-          <p className="text-sm text-zinc-400 font-medium font-mono">
-            {nodePlatform.split('/')[0]}
-          </p>
+          <p className="text-2xl font-bold font-mono truncate">{nodePlatform}</p>
         </div>
 
         <div className="bg-zinc-800 p-6 rounded-lg shadow-lg">
           <h2 className="text-xl font-semibold mb-4 text-teal-200 flex items-center">Difficulty</h2>
-          <p className="text-2xl font-bold font-mono">{difficulty}</p>
-          {/* <p className="text-sm text-zinc-400 font-medium font-mono">Network difficulty</p> */}
+          <p className="text-2xl font-bold font-mono truncate">{difficulty}</p>
         </div>
 
         <div className="bg-zinc-800 p-6 rounded-lg shadow-lg">
           <h2 className="text-xl font-semibold mb-4 text-teal-200 flex items-center">Address</h2>
-          <p className="text-2xl font-bold font-mono">{address.split(':')[0]}</p>
-          <p className="text-sm text-zinc-400 font-medium font-mono">
-            port {address.split(':')[1]}
-          </p>
+          <p className="text-2xl font-bold font-mono truncate">{address}</p>
         </div>
 
         <div className="bg-zinc-800 p-6 rounded-lg shadow-lg">
           <h2 className="text-xl font-semibold mb-4 text-teal-200 flex items-center">
             Latest Block
           </h2>
-          <p className="text-2xl font-bold font-mono">#{block.number.toLocaleString()}</p>
-          <p className="text-sm text-zinc-400 font-medium font-mono">
-            {formatDistanceToNowStrict(fromUnixTime(block.timestamp), { addSuffix: true })}
-          </p>
+          <p className="text-2xl font-bold font-mono truncate">#{block.number.toLocaleString()}</p>
         </div>
 
         <div className="bg-zinc-800 p-6 rounded-lg shadow-lg">
           <h2 className="text-xl font-semibold mb-4 text-teal-200 flex items-center">Gas Price</h2>
-          <p className="text-2xl font-bold font-mono"></p>
-          <p className="text-sm text-zinc-400 font-medium font-mono">Base fee per gas</p>
+          <p className="text-2xl font-bold font-mono truncate">{gasPrice} Gwei</p>
         </div>
       </div>
 
@@ -188,7 +203,7 @@ export default function Index() {
               {sortedBlocks.map((block) => (
                 <tr key={block.hash} className="border-t border-zinc-700">
                   <td className="py-2 font-mono">#{block.number.toLocaleString()}</td>
-                  <td className="py-2 font-mono truncate">{block.hash}</td>
+                  <td className="py-2 font-mono truncate min-w-0">{block.hash}</td>
                   <td className="py-2 font-mono">{block.miner}</td>
                   <td className="py-2 font-mono">{formatUnits(block.gasUsed, 'gwei')}</td>
                   <td className="py-2 font-mono">{block.transactions.length}</td>
