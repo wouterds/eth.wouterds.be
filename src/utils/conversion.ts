@@ -7,5 +7,19 @@ export function hexToAscii(hex: string): string {
     str += charCode >= 32 && charCode <= 126 ? String.fromCharCode(charCode) : '.';
   }
 
-  return str.replace(/^\.*$/, '')?.trim();
+  // Remove consecutive dots and trim the result
+  return str.replace(/\.{2,}/g, '').trim();
+}
+
+export function formatHashrate(hashrate: number): string {
+  const units = ['H', 'KH', 'MH', 'GH', 'TH', 'PH'];
+  let unitIndex = 0;
+  let formattedHashrate = hashrate;
+
+  while (formattedHashrate >= 1024 && unitIndex < units.length - 1) {
+    formattedHashrate /= 1024;
+    unitIndex++;
+  }
+
+  return `${formattedHashrate.toFixed(2)} ${units[unitIndex]}`;
 }
