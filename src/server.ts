@@ -1,5 +1,9 @@
+import 'dotenv/config';
+
 import { createRequestHandler } from '@remix-run/express';
+import compression from 'compression';
 import express from 'express';
+import morgan from 'morgan';
 
 const HOST = process.env.HOST || 'localhost';
 const PORT = process.env.PORT || 3000;
@@ -13,16 +17,18 @@ const viteDevServer =
         }),
       );
 
-const app = express();
-app.use(viteDevServer?.middlewares || express.static('./client'));
-
 const build = viteDevServer
   ? () => viteDevServer.ssrLoadModule('virtual:remix/server-build')
   : // @ts-expect-error this file is generated at build time
     await import('./server/index.js');
 
-app.all('*', createRequestHandler({ build }));
+const server = express();
+server.use(compression());
+server.use(morgan('tiny'));
+server.use(express.static('./client'));
 
-app.listen(Number(PORT), HOST, () => {
-  console.log(`App listening on http://${HOST}:${PORT}`);
+server.all('*', createRequestHandler({ build }));
+
+server.listen(Number(PORT), HOST, () => {
+  console.log(`⚡ Ready on http://${HOST}:${PORT}`);
 });
