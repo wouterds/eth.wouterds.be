@@ -1,6 +1,7 @@
 import { createRequestHandler } from '@remix-run/express';
 import express from 'express';
 
+const HOST = process.env.HOST || 'localhost';
 const PORT = process.env.PORT || 3000;
 
 const viteDevServer =
@@ -13,15 +14,15 @@ const viteDevServer =
       );
 
 const app = express();
-app.use(viteDevServer ? viteDevServer.middlewares : express.static('build/client'));
+app.use(viteDevServer?.middlewares || express.static('./client'));
 
 const build = viteDevServer
   ? () => viteDevServer.ssrLoadModule('virtual:remix/server-build')
   : // @ts-expect-error this file is generated at build time
-    await import('./build/server/index.js');
+    await import('./server/index.js');
 
 app.all('*', createRequestHandler({ build }));
 
-app.listen(PORT, () => {
-  console.log(`App listening on http://localhost:${PORT}`);
+app.listen(Number(PORT), HOST, () => {
+  console.log(`App listening on http://${HOST}:${PORT}`);
 });
