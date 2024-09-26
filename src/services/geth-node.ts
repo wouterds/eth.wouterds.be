@@ -1,8 +1,8 @@
 import { ethers } from 'ethers';
 
-const GET_NODE = process.env.GETH_NODE || 'http://geth:8545';
+import { config } from '~/config';
 
-const provider = new ethers.JsonRpcProvider(GET_NODE);
+const provider = new ethers.JsonRpcProvider(`http://${config.gethNode}`);
 
 export const getLatestBlock = async () => {
   return getBlock('latest', { withTransactions: true });
