@@ -27,6 +27,7 @@ services:
       - "30303:30303/tcp"
       - "30303:30303/udp"
       - "8545:8545"
+      - "8546:8546"
     volumes:
       - /data/eth-node.geth:/root/.ethereum
       - ./jwt.hex:/root/.ethereum/jwt.hex
@@ -34,7 +35,12 @@ services:
       - --http
       - --http.addr=0.0.0.0
       - --http.vhosts=*
-      - --http.api=eth,net,engine,admin
+      - --http.api=eth,net,web3,engine,admin
+      - --ws
+      - --ws.addr=0.0.0.0
+      - --ws.port=8546
+      - --ws.api=eth,net,web3
+      - --ws.origins=*
       - --syncmode=full
       - --datadir=/root/.ethereum
       - --authrpc.addr=0.0.0.0
