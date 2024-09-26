@@ -22,7 +22,7 @@ ENV PORT=3000
 ENV HOST=0.0.0.0
 ENV NODE_ENV=production
 
-COPY --chown=node:node --from=build /code/build /code
+COPY --chown=node:node --from=build /code/build /code/build
 COPY --chown=node:node --from=build /code/package.json /code/package.json
 COPY --chown=node:node --from=build /code/package-lock.json /code/package-lock.json
 COPY --chown=node:node --from=build /code/node_modules /code/node_modules
