@@ -1,7 +1,11 @@
 import './tailwind.css';
 
-import type { LinksFunction } from '@remix-run/node';
-import { Links, Meta, Outlet, Scripts } from '@remix-run/react';
+import type { LinksFunction, LoaderFunctionArgs } from '@remix-run/node';
+import { Links, Meta, Outlet, Scripts, useLoaderData } from '@remix-run/react';
+import { ethers, WebSocketProvider } from 'ethers';
+import { ReactNode, useEffect, useState } from 'react';
+
+import { SocketProvider } from '~/context';
 
 export const links: LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -16,7 +20,7 @@ export const links: LinksFunction = () => [
   },
 ];
 
-export function Layout({ children }: { children: React.ReactNode }) {
+export const Layout = ({ children }: { children: ReactNode }) => {
   return (
     <html lang="en">
       <head>
@@ -32,8 +36,34 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </body>
     </html>
   );
-}
+};
 
-export default function App() {
-  return <Outlet />;
-}
+export const loader = ({ request }: LoaderFunctionArgs) => {
+  if (process.env.NODE_ENV !== 'production') {
+    return { node: `ws://${process.env.GETH_NODE || 'geth'}:8546` };
+  }
+
+  return { node: `ws://${new URL(request.url).host}:8546` };
+};
+
+const App = () => {
+  const { node } = useLoaderData<typeof loader>();
+  const [socket, setSocket] = useState<WebSocketProvider | null>(null);
+
+  useEffect(() => {
+    const socket = new ethers.WebSocketProvider(node);
+    setSocket(socket);
+
+    return () => {
+      socket.destroy();
+    };
+  }, [node]);
+
+  return (
+    <SocketProvider socket={socket}>
+      <Outlet />
+    </SocketProvider>
+  );
+};
+
+export default App;

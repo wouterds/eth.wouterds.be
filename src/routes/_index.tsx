@@ -1,10 +1,11 @@
 import type { MetaFunction } from '@remix-run/node';
-import { json, useLoaderData, useRevalidator } from '@remix-run/react';
+import { json, useLoaderData } from '@remix-run/react';
 import { usePrevious } from '@uidotdev/usehooks';
 import { format, formatDistanceToNowStrict, fromUnixTime } from 'date-fns';
 import { Block, formatUnits, Transaction } from 'ethers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { useSocket } from '~/context';
 import { useAverage } from '~/hooks/use-average';
 import {
   calculateBlockHashrate,
@@ -50,8 +51,16 @@ export default function Index() {
     peerCount: peerCountCurrent,
     hashrate: hashrateCurrent,
   } = useLoaderData<typeof loader>();
-  const { revalidate } = useRevalidator();
   const [blocks, setBlocks] = useState<Block[]>([block]);
+
+  const socket = useSocket();
+
+  useEffect(() => {
+    console.log('on block');
+    socket?.on('block', (data) => {
+      console.log(data);
+    });
+  }, [socket]);
 
   const peerCount = useAverage(peerCountCurrent, 10, 0);
   const hashrate = useAverage(hashrateCurrent, 20, 0);
@@ -104,14 +113,6 @@ export default function Index() {
   const difficulty = useMemo(() => {
     return nodeInfo.protocols?.eth?.difficulty;
   }, [nodeInfo]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      revalidate();
-    }, 500);
-
-    return () => clearInterval(interval);
-  }, [revalidate]);
 
   const gasPriceCurrent = useMemo(() => {
     let price: number;
