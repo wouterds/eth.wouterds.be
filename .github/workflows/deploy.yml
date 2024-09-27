@@ -44,6 +44,8 @@ jobs:
         with:
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          file: .docker/Dockerfile
+          context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
@@ -74,5 +76,5 @@ jobs:
           chmod 600 ~/.ssh/config
       - run: |
           ssh ${{ env.USER }}@${{ env.HOST }} "mkdir -p ${{ env.DIRECTORY }}"
-          scp docker-compose.yml ${{ env.USER }}@${{ env.HOST }}:${{ env.DIRECTORY }}/docker-compose.yml
+          scp .docker/docker-compose.yml ${{ env.USER }}@${{ env.HOST }}:${{ env.DIRECTORY }}/docker-compose.yml
           ssh ${{ env.USER }}@${{ env.HOST }} "cd ${{ env.DIRECTORY }} && docker compose pull && docker compose up -d"

@@ -39,11 +39,11 @@ export const Layout = ({ children }: { children: ReactNode }) => {
 };
 
 export const loader = ({ request }: LoaderFunctionArgs) => {
-  if (process.env.NODE_ENV !== 'production') {
-    return { node: `ws://${process.env.GETH_NODE || 'geth'}:8546` };
+  if (process.env.GETH_NODE_WS) {
+    return { node: process.env.GETH_NODE_WS };
   }
 
-  return { node: `ws://${new URL(request.url).host}:8546` };
+  return { node: `wss://${new URL(request.url).host}/ws` };
 };
 
 const App = () => {

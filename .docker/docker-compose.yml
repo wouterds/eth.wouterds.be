@@ -15,19 +15,28 @@ services:
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
       - "traefik.docker.network=proxy"
     networks:
-      - proxy
       - internal
+      - proxy
 
   geth:
     image: ethereum/client-go
     container_name: be.wouterds.eth--geth
     mem_limit: 16gb
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.ethwouterdsbe-ws.rule=Host(`eth.wouterds.be`) && PathPrefix(`/ws`)"
+      - "traefik.http.routers.ethwouterdsbe-ws.entrypoints=websecure"
+      - "traefik.http.routers.ethwouterdsbe-ws.tls=true"
+      - "traefik.http.services.ethwouterdsbe-ws.loadbalancer.server.port=8546"
+      - "traefik.http.services.ethwouterdsbe-ws.loadbalancer.server.scheme=http"
+      - "traefik.http.middlewares.ethwouterdsbe-ws-stripprefix.stripprefix.prefixes=/ws"
+      - "traefik.http.routers.ethwouterdsbe-ws.middlewares=ethwouterdsbe-ws-stripprefix@docker"
     ports:
       - "30303:30303/tcp"
       - "30303:30303/udp"
       - "8545:8545"
-      - "8546:8546"
     volumes:
       - /data/eth-node.geth:/root/.ethereum
       - ./jwt.hex:/root/.ethereum/jwt.hex
@@ -50,6 +59,7 @@ services:
       - --discovery.dns=eth.wouterds.be
     networks:
       - internal
+      - proxy
 
   lighthouse:
     image: sigp/lighthouse
@@ -80,4 +90,4 @@ networks:
   proxy:
     external: true
   internal:
-    name: eth-node_internal
+    name: eth-node

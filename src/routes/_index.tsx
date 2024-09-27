@@ -1,8 +1,7 @@
 import type { MetaFunction } from '@remix-run/node';
 import { json, useLoaderData } from '@remix-run/react';
-import { usePrevious } from '@uidotdev/usehooks';
 import { format, formatDistanceToNowStrict, fromUnixTime } from 'date-fns';
-import { Block, formatUnits, Transaction } from 'ethers';
+import { Block, formatUnits } from 'ethers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useSocket } from '~/context';
@@ -45,23 +44,15 @@ export const loader = async () => {
 
 export default function Index() {
   const {
-    block,
+    block: initialBlock,
     nodeInfo,
     syncStatus,
     peerCount: peerCountCurrent,
     hashrate: hashrateCurrent,
   } = useLoaderData<typeof loader>();
-  const [blocks, setBlocks] = useState<Block[]>([block]);
+  const [blocks, setBlocks] = useState<Block[]>([initialBlock]);
 
   const socket = useSocket();
-
-  useEffect(() => {
-    console.log('on block');
-    socket?.on('block', (data) => {
-      console.log(data);
-    });
-  }, [socket]);
-
   const peerCount = useAverage(peerCountCurrent, 10, 0);
   const hashrate = useAverage(hashrateCurrent, 20, 0);
 
@@ -76,25 +67,17 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
-    addBlock(block);
-  }, [addBlock, block]);
-
-  const previousBlock = usePrevious(block);
-  useEffect(() => {
-    if (previousBlock) {
-      const diff = block.number - previousBlock.number;
-
-      for (let i = 1; i <= diff; i++) {
-        fetch(`/api/block?block=${previousBlock.number + i}`, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        })
-          .then((res) => res.json())
-          .then((data) => addBlock(data.block));
+    socket?.on('block', async (id) => {
+      const block = await socket.getBlock(id);
+      if (block) {
+        addBlock(block);
       }
-    }
-  }, [addBlock, block, previousBlock]);
+    });
+  }, [socket, addBlock]);
+
+  const block = useMemo(() => {
+    return blocks[0];
+  }, [blocks]);
 
   const nodeVersion = useMemo(() => {
     const versionMatch = nodeInfo.name?.match(/^(.+\/v\d+\.\d+\.\d+)/);
@@ -113,28 +96,6 @@ export default function Index() {
   const difficulty = useMemo(() => {
     return nodeInfo.protocols?.eth?.difficulty;
   }, [nodeInfo]);
-
-  const gasPriceCurrent = useMemo(() => {
-    let price: number;
-
-    if (block.baseFeePerGas) {
-      price = parseFloat(formatUnits(block.baseFeePerGas, 'gwei'));
-    } else if (block.gasPrice) {
-      price = parseFloat(formatUnits(block.gasPrice, 'gwei'));
-    } else if (block.transactions && block.transactions.length > 0) {
-      const totalGasPrice = block.transactions.reduce((sum: bigint, tx: Transaction) => {
-        return sum + BigInt(tx.gasPrice || 0);
-      }, BigInt(0));
-
-      price = parseFloat(formatUnits(totalGasPrice / BigInt(block.transactions.length), 'gwei'));
-    } else {
-      return 0;
-    }
-
-    return Math.round(price);
-  }, [block]);
-
-  const gasPrice = useAverage(gasPriceCurrent, 10, 0);
 
   return (
     <div className="flex-1 bg-zinc-900 text-zinc-100 p-8">
@@ -192,10 +153,10 @@ export default function Index() {
           </div>
 
           <div className="bg-zinc-800 p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-semibold mb-4 text-teal-200 flex items-center">
-              Gas Price
-            </h2>
-            <p className="text-2xl font-bold font-mono truncate">{gasPrice} Gwei</p>
+            <h2 className="text-xl font-semibold mb-4 text-teal-200 flex items-center">Gas Used</h2>
+            <p className="text-2xl font-bold font-mono truncate">
+              {formatUnits(block.gasUsed, 'gwei')}
+            </p>
           </div>
         </div>
 
