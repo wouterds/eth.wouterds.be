@@ -60,8 +60,6 @@ export default function Index() {
     ];
   }, [network, progress, block, peers, version, platform]);
 
-  console.log({ blocks });
-
   return (
     <div className="flex-1 bg-slate-100 text-black p-8 lg:p-12">
       <h1 className="text-2xl lg:text-3xl font-bold mb-4 lg:mb-8">eth.wouterds.be</h1>
