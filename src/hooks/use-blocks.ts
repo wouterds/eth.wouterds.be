@@ -31,9 +31,5 @@ export const useBlocks = (initialData?: Block[] | null, options?: { limit?: numb
     });
   }, [socket, addBlock]);
 
-  const block = useMemo(() => {
-    return blocks[blocks.length - 1];
-  }, [blocks]);
-
-  return useMemo(() => ({ blocks, block }), [blocks, block]);
+  return useMemo(() => ({ blocks, block: blocks?.[blocks.length - 1] }), [blocks]);
 };
