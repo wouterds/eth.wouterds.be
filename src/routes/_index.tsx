@@ -70,36 +70,52 @@ export default function Index() {
   }, [network, progress, block, peers, version, platform]);
 
   return (
-    <div className="flex-1 bg-slate-100 text-black p-8 lg:p-12">
-      <h1 className="text-2xl lg:text-3xl font-bold mb-4 lg:mb-8">eth.wouterds.be</h1>
+    <div className="flex-1 bg-slate-100 dark:bg-gray-900 text-black dark:text-white p-8 lg:p-12">
+      <div className="flex justify-between items-center mb-4 lg:mb-8">
+        <h1 className="text-2xl lg:text-3xl font-bold">eth.wouterds.be</h1>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 lg:gap-8 mb-8 lg:mb-10">
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="flex flex-col border bg-white border-slate-200 rounded-lg p-4 lg:p-6 shadow-sm">
-            <span className="text-sm font-medium text-slate-500 mb-2 lg:mb-3">{stat.label}</span>
+            className="flex flex-col border bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-700 rounded-lg p-4 lg:p-6 shadow-sm">
+            <span className="text-sm font-medium text-slate-500 dark:text-gray-400 mb-2 lg:mb-3">
+              {stat.label}
+            </span>
             <span className="text-lg lg:text-xl font-bold font-mono">{stat.value}</span>
           </div>
         ))}
       </div>
-      <div className="flex flex-1 flex-col border bg-white border-slate-200 rounded-lg p-4 lg:p-6 shadow-sm">
+      <div className="flex flex-1 flex-col border bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-700 rounded-lg p-4 lg:p-6 shadow-sm">
         <h2 className="text-lg lg:text-xl font-bold mb-4 lg:mb-6">Recent blocks</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-slate-200 border-b">
+            <thead className="bg-slate-50 dark:bg-gray-700 dark:bg-opacity-50">
               <tr>
-                <th className="font-medium text-slate-500 text-left px-4 py-2">Block</th>
-                <th className="font-medium text-slate-500 text-left px-4 py-2">Hash</th>
-                <th className="font-medium text-slate-500 text-left px-4 py-2">Transactions</th>
-                <th className="font-medium text-slate-500 text-left px-4 py-2">Extra data</th>
-                <th className="font-medium text-slate-500 text-left px-4 py-2">Age</th>
-                <th className="font-medium text-slate-500 text-left px-4 py-2">Timestamp</th>
+                <th className="font-medium text-slate-500 dark:text-gray-300 text-left px-4 py-2">
+                  Block
+                </th>
+                <th className="font-medium text-slate-500 dark:text-gray-300 text-left px-4 py-2">
+                  Hash
+                </th>
+                <th className="font-medium text-slate-500 dark:text-gray-300 text-left px-4 py-2">
+                  Transactions
+                </th>
+                <th className="font-medium text-slate-500 dark:text-gray-300 text-left px-4 py-2">
+                  Extra data
+                </th>
+                <th className="font-medium text-slate-500 dark:text-gray-300 text-left px-4 py-2">
+                  Age
+                </th>
+                <th className="font-medium text-slate-500 dark:text-gray-300 text-left px-4 py-2">
+                  Timestamp
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-slate-200 dark:divide-gray-700">
               {blocks.map((block) => (
-                <tr key={block.number} className="text-nowrap text-slate-500">
-                  <td className="px-4 py-2 text-slate-700 font-mono">
+                <tr key={block.number} className="text-nowrap text-slate-500 dark:text-gray-300">
+                  <td className="px-4 py-2 text-slate-700 dark:text-gray-100 font-mono">
                     #{formatBlockNumber(block.number)}
                   </td>
                   <td className="px-4 py-2 truncate max-w-96 font-mono">{block.hash}</td>
