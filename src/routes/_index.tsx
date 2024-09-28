@@ -1,4 +1,5 @@
 import type { MetaFunction } from '@remix-run/node';
+import { useLoaderData } from '@remix-run/react';
 import { format, formatDistanceToNowStrict, fromUnixTime } from 'date-fns';
 import { useMemo } from 'react';
 
@@ -7,6 +8,7 @@ import { useNetwork } from '~/hooks/use-network';
 import { usePeers } from '~/hooks/use-peers';
 import { useSyncStatus } from '~/hooks/use-sync-status';
 import { useVersion } from '~/hooks/use-version';
+import { getLatestBlock } from '~/services/geth-node';
 import { formatBlockNumber } from '~/utils/format-block-number';
 import { hexToAscii } from '~/utils/hex-to-ascii';
 
@@ -14,10 +16,17 @@ export const meta: MetaFunction = () => {
   return [{ title: 'eth.wouterds.be' }];
 };
 
+export const loader = async () => {
+  const block = await getLatestBlock();
+
+  return { block };
+};
+
 export default function Index() {
+  const data = useLoaderData<typeof loader>();
   const network = useNetwork();
   const progress = useSyncStatus();
-  const { blocks, block } = useBlocks();
+  const { blocks, block } = useBlocks([data.block]);
   const peers = usePeers();
   const { version, platform } = useVersion();
 
@@ -25,23 +34,23 @@ export default function Index() {
     return [
       {
         label: 'Version',
-        value: `${version}`,
+        value: version || 'Unknown',
       },
       {
         label: 'Platform',
-        value: `${platform}`,
+        value: platform || 'Unknown',
       },
       {
         label: 'Network',
-        value: `${network?.name}`,
+        value: network?.name || 'Unknown',
       },
       {
         label: 'Chain ID',
-        value: `${network?.chainId}`,
+        value: network?.chainId || 'Unknown',
       },
       {
         label: 'Peers',
-        value: `${peers}`,
+        value: peers || 'Unknown',
       },
       {
         label: 'Block',
@@ -49,7 +58,7 @@ export default function Index() {
       },
       {
         label: 'Sync status',
-        value: `${progress.toFixed(2)}%`,
+        value: progress ? `${progress.toFixed(2)}%` : 'Unknown',
       },
       {
         label: 'Synced until',
