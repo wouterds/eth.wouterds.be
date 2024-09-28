@@ -1,239 +1,113 @@
 import type { MetaFunction } from '@remix-run/node';
-import { json, useLoaderData } from '@remix-run/react';
 import { format, formatDistanceToNowStrict, fromUnixTime } from 'date-fns';
-import { Block, formatUnits } from 'ethers';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
-import { useSocket } from '~/context';
-import { useAverage } from '~/hooks/use-average';
-import {
-  calculateBlockHashrate,
-  getLatestBlock,
-  getNodeInfo,
-  getPeerCount,
-  getSyncStatus,
-} from '~/services/geth-node';
-import { formatHashrate, hexToAscii } from '~/utils/conversion';
+import { useBlocks } from '~/hooks/use-blocks';
+import { useNetwork } from '~/hooks/use-network';
+import { usePeers } from '~/hooks/use-peers';
+import { useSyncStatus } from '~/hooks/use-sync-status';
+import { useVersion } from '~/hooks/use-version';
+import { formatBlockNumber } from '~/utils/format-block-number';
+import { hexToAscii } from '~/utils/hex-to-ascii';
 
 export const meta: MetaFunction = () => {
   return [{ title: 'eth.wouterds.be' }];
 };
 
-export const loader = async () => {
-  const [nodeInfo, block, syncStatus, peerCount] = await Promise.all([
-    getNodeInfo(),
-    getLatestBlock(),
-    getSyncStatus(),
-    getPeerCount(),
-  ]);
-
-  const hashrate = await calculateBlockHashrate(block.number);
-
-  return json({
-    block: JSON.parse(
-      JSON.stringify(block, (_key, value) =>
-        typeof value === 'bigint' ? value.toString() : value,
-      ),
-    ),
-    nodeInfo,
-    syncStatus,
-    peerCount,
-    hashrate,
-  });
-};
-
 export default function Index() {
-  const {
-    block: initialBlock,
-    nodeInfo,
-    syncStatus,
-    peerCount: peerCountCurrent,
-    hashrate: hashrateCurrent,
-  } = useLoaderData<typeof loader>();
-  const [blocks, setBlocks] = useState<Block[]>([initialBlock]);
+  const network = useNetwork();
+  const progress = useSyncStatus();
+  const { blocks, block } = useBlocks();
+  const peers = usePeers();
+  const { version, platform } = useVersion();
 
-  const socket = useSocket();
-  const peerCount = useAverage(peerCountCurrent, 10, 0);
-  const hashrate = useAverage(hashrateCurrent, 20, 0);
+  const stats = useMemo(() => {
+    return [
+      {
+        label: 'Version',
+        value: `${version}`,
+      },
+      {
+        label: 'Platform',
+        value: `${platform}`,
+      },
+      {
+        label: 'Network',
+        value: `${network?.name}`,
+      },
+      {
+        label: 'Chain ID',
+        value: `${network?.chainId}`,
+      },
+      {
+        label: 'Peers',
+        value: `${peers}`,
+      },
+      {
+        label: 'Block',
+        value: block?.number ? `#${formatBlockNumber(block?.number)}` : 'Unknown',
+      },
+      {
+        label: 'Sync status',
+        value: `${progress.toFixed(2)}%`,
+      },
+      {
+        label: 'Synced until',
+        value: block?.timestamp
+          ? format(fromUnixTime(block?.timestamp), 'MMM dd yyyy, HH:mm:ss')
+          : 'Unknown',
+      },
+    ];
+  }, [network, progress, block, peers, version, platform]);
 
-  const addBlock = useCallback(async (block: Block) => {
-    setBlocks((blocks) => {
-      if (blocks.find((b) => b.number === block.number)) {
-        return blocks;
-      }
-
-      return [block, ...blocks].slice(0, 100);
-    });
-  }, []);
-
-  useEffect(() => {
-    socket?.on('block', async (id) => {
-      const block = await socket.getBlock(id);
-      if (block) {
-        addBlock(block);
-      }
-    });
-  }, [socket, addBlock]);
-
-  const block = useMemo(() => {
-    return blocks[0];
-  }, [blocks]);
-
-  const nodeVersion = useMemo(() => {
-    const versionMatch = nodeInfo.name?.match(/^(.+\/v\d+\.\d+\.\d+)/);
-    return versionMatch ? versionMatch[1] : 'Unknown';
-  }, [nodeInfo]);
-
-  const nodePlatform = useMemo(() => {
-    const platformMatch = nodeInfo.name?.match(/^.+\/v\d+\.\d+\.\d+-[^/]+\/(.+)/);
-    return platformMatch ? platformMatch[1] : 'Unknown';
-  }, [nodeInfo]);
-
-  const address = useMemo(() => {
-    return `${nodeInfo.ip}:${nodeInfo.ports.listener}`;
-  }, [nodeInfo]);
-
-  const difficulty = useMemo(() => {
-    return nodeInfo.protocols?.eth?.difficulty;
-  }, [nodeInfo]);
+  console.log({ blocks });
 
   return (
-    <div className="flex-1 bg-zinc-900 text-zinc-100 p-8">
-      <h1 className="text-3xl font-bold mb-8 text-teal-200">eth.wouterds.be</h1>
-      <div className="flex flex-col gap-8 flex-1">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="bg-zinc-800 p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-semibold mb-4 text-teal-200 flex items-center">Version</h2>
-            <p className="text-2xl font-bold font-mono truncate">{nodeVersion}</p>
+    <div className="flex-1 bg-slate-100 text-black p-8 lg:p-12">
+      <h1 className="text-2xl lg:text-3xl font-bold mb-4 lg:mb-8">eth.wouterds.be</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 lg:gap-8 mb-8 lg:mb-10">
+        {stats.map((stat) => (
+          <div
+            key={stat.label}
+            className="flex flex-col border bg-white border-slate-200 rounded-lg p-4 lg:p-6 shadow-sm">
+            <span className="text-sm font-medium text-slate-500 mb-2 lg:mb-3">{stat.label}</span>
+            <span className="text-lg lg:text-xl font-bold font-mono">{stat.value}</span>
           </div>
-
-          <div className="bg-zinc-800 p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-semibold mb-4 text-teal-200 flex items-center">Platform</h2>
-            <p className="text-2xl font-bold font-mono truncate">{nodePlatform}</p>
-          </div>
-
-          <div className="bg-zinc-800 p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-semibold mb-4 text-teal-200 flex items-center">Address</h2>
-            <p className="text-2xl font-bold font-mono truncate">{address}</p>
-          </div>
-
-          <div className="bg-zinc-800 p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-semibold mb-4 text-teal-200 flex items-center">
-              Sync Status
-            </h2>
-            <p className="text-2xl font-bold font-mono truncate">{syncStatus?.toFixed(2)}%</p>
-          </div>
-
-          <div className="bg-zinc-800 p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-semibold mb-4 text-teal-200 flex items-center">
-              Peer Count
-            </h2>
-            <p className="text-2xl font-bold font-mono truncate">{peerCount}</p>
-          </div>
-
-          <div className="bg-zinc-800 p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-semibold mb-4 text-teal-200 flex items-center">
-              Difficulty
-            </h2>
-            <p className="text-2xl font-bold font-mono truncate">{difficulty}</p>
-          </div>
-
-          <div className="bg-zinc-800 p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-semibold mb-4 text-teal-200 flex items-center">Hashrate</h2>
-            <p className="text-2xl font-bold font-mono truncate">{formatHashrate(hashrate)}</p>
-          </div>
-
-          <div className="bg-zinc-800 p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-semibold mb-4 text-teal-200 flex items-center">
-              Latest Block
-            </h2>
-            <p className="text-2xl font-bold font-mono truncate">
-              #{block.number.toLocaleString()}
-            </p>
-          </div>
-
-          <div className="bg-zinc-800 p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-semibold mb-4 text-teal-200 flex items-center">Gas Used</h2>
-            <p className="text-2xl font-bold font-mono truncate">
-              {formatUnits(block.gasUsed, 'gwei')}
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-zinc-800 p-6 rounded-lg shadow-lg">
-          <h2 className="text-xl font-semibold mb-4 text-teal-200">Block Information</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-zinc-400 font-medium">Hash:</p>
-              <p className="truncate font-mono">{block.hash}</p>
-            </div>
-            <div>
-              <p className="text-sm text-zinc-400 font-medium">Parent Hash:</p>
-              <p className="truncate font-mono">{block.parentHash}</p>
-            </div>
-            <div>
-              <p className="text-sm text-zinc-400 font-medium">Miner:</p>
-              <p className="break-all font-mono">{block.miner}</p>
-            </div>
-            <div>
-              <p className="text-sm text-zinc-400 font-medium">Gas Used:</p>
-              <p className="font-mono">{formatUnits(block.gasUsed, 'gwei')}</p>
-            </div>
-            <div>
-              <p className="text-sm text-zinc-400 font-medium">Transactions:</p>
-              <p className="font-mono">{block.transactions.length}</p>
-            </div>
-            <div>
-              <p className="text-sm text-zinc-400 font-medium">Extra Data:</p>
-              <p className="break-all font-mono">
-                {hexToAscii(block.extraData) || block.extraData}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-zinc-800 p-6 rounded-lg shadow-lg flex-1">
-          <h2 className="text-xl font-semibold mb-4 text-teal-200">Recent Blocks</h2>
-          <div className="overflow-x-auto">
-            <table className="max-w-full w-full text-sm text-nowrap">
-              <thead>
-                <tr className="text-left text-zinc-400">
-                  <th className="p-2 font-medium">Block</th>
-                  <th className="p-2 font-medium">Hash</th>
-                  <th className="p-2 font-medium">Transactions</th>
-                  <th className="p-2 font-medium">Gas Used</th>
-                  <th className="p-2 font-medium">Extra Data</th>
-                  <th className="p-2 font-medium">Age</th>
-                  <th className="p-2 font-medium">Date</th>
+        ))}
+      </div>
+      <div className="flex flex-1 flex-col border bg-white border-slate-200 rounded-lg p-4 lg:p-6 shadow-sm">
+        <h2 className="text-lg lg:text-xl font-bold mb-4 lg:mb-6">Recent blocks</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 border-slate-200 border-b">
+              <tr>
+                <th className="font-medium text-slate-500 text-left px-4 py-2">Block</th>
+                <th className="font-medium text-slate-500 text-left px-4 py-2">Hash</th>
+                <th className="font-medium text-slate-500 text-left px-4 py-2">Transactions</th>
+                <th className="font-medium text-slate-500 text-left px-4 py-2">Extra data</th>
+                <th className="font-medium text-slate-500 text-left px-4 py-2">Age</th>
+                <th className="font-medium text-slate-500 text-left px-4 py-2">Timestamp</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {blocks.map((block) => (
+                <tr key={block.number} className="text-nowrap text-slate-500">
+                  <td className="px-4 py-2 text-slate-700 font-mono">
+                    #{formatBlockNumber(block.number)}
+                  </td>
+                  <td className="px-4 py-2 truncate max-w-96 font-mono">{block.hash}</td>
+                  <td className="px-4 py-2 font-mono">{block.transactions.length}</td>
+                  <td className="px-4 py-2">{hexToAscii(block.extraData) || block.extraData}</td>
+                  <td className="px-4 py-2">
+                    {formatDistanceToNowStrict(fromUnixTime(block.timestamp))}
+                  </td>
+                  <td className="px-4 py-2">
+                    {format(fromUnixTime(block.timestamp), 'MMM dd yyyy, HH:mm:ss')}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {blocks
-                  .sort((a, b) => b.number - a.number)
-                  .map((block) => (
-                    <tr key={`block:${block.hash}`} className="border-t border-zinc-700">
-                      <td className="p-2 font-mono">#{block.number.toLocaleString()}</td>
-                      <td className="p-2 font-mono max-w-96">
-                        <div className=" truncate">{block.hash}</div>
-                      </td>
-                      <td className="p-2 font-mono">{block.transactions.length}</td>
-                      <td className="p-2 font-mono">{formatUnits(block.gasUsed, 'gwei')}</td>
-                      <td className="p-2 font-mono">
-                        {hexToAscii(block.extraData) || block.extraData}
-                      </td>
-                      <td className="p-2 font-mono">
-                        {formatDistanceToNowStrict(fromUnixTime(block.timestamp), {
-                          addSuffix: true,
-                        })}
-                      </td>
-                      <td className="p-2 font-mono">
-                        {format(fromUnixTime(block.timestamp), 'yyyy-MM-dd HH:mm:ss')}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
