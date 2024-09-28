@@ -6,8 +6,8 @@ import { useTick } from './use-tick';
 
 export const useSyncStatus = () => {
   const socket = useSocket();
-  const [progress, setProgress] = useState<number>(0);
   const tick = useTick();
+  const [progress, setProgress] = useState<number>(0);
 
   useEffect(() => {
     socket?.send('eth_syncing', []).then((syncing) => {

@@ -5,7 +5,6 @@ import { useSocket } from '~/context';
 
 export const useNetwork = () => {
   const socket = useSocket();
-
   const [network, setNetwork] = useState<Network | null>(null);
 
   useEffect(() => {
