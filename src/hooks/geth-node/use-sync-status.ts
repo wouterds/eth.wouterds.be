@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { useSocket } from '~/context';
 
-import { useTick } from './use-tick';
+import { useTick } from '../use-tick';
 
 export const useSyncStatus = () => {
   const socket = useSocket();

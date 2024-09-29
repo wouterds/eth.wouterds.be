@@ -3,11 +3,7 @@ import { useLoaderData } from '@remix-run/react';
 import { format, formatDistanceToNowStrict, fromUnixTime } from 'date-fns';
 import { useMemo } from 'react';
 
-import { useBlocks } from '~/hooks/use-blocks';
-import { useNetwork } from '~/hooks/use-network';
-import { usePeers } from '~/hooks/use-peers';
-import { useSyncStatus } from '~/hooks/use-sync-status';
-import { useVersion } from '~/hooks/use-version';
+import { useBlocks, useNetwork, usePeers, useSyncStatus, useVersion } from '~/hooks/geth-node';
 import { getLatestBlock } from '~/services/geth-node';
 import { formatBlockNumber } from '~/utils/format-block-number';
 import { hexToAscii } from '~/utils/hex-to-ascii';
