@@ -1,7 +1,7 @@
 import type { MetaFunction } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { format, formatDistanceToNowStrict, fromUnixTime } from 'date-fns';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 
 import { useBlocks } from '~/hooks/use-blocks';
 import { useNetwork } from '~/hooks/use-network';
@@ -58,7 +58,7 @@ export default function Index() {
       },
       {
         label: 'Sync status',
-        value: progress ? `${progress.toFixed(2)}%` : 'Unknown',
+        value: progress ? `${progress.toFixed(4)}%` : 'Unknown',
       },
       {
         label: 'Synced until',
