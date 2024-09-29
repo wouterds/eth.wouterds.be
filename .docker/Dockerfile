@@ -6,10 +6,10 @@ RUN apk add --no-cache libc6-compat dumb-init
 
 FROM base AS deps
 
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .
 RUN npm ci
 
-FROM deps as prod-deps
+FROM deps AS prod-deps
 
 RUN npm prune --production
 
@@ -23,10 +23,6 @@ RUN npm run build
 FROM base AS runtime
 WORKDIR /code
 
-ENV PORT=3000
-ENV HOST=0.0.0.0
-ENV NODE_ENV=production
-
 COPY --chown=node:node --from=build /code/build ./build
 COPY --chown=node:node --from=prod-deps /code/package.json ./package.json
 COPY --chown=node:node --from=prod-deps /code/package-lock.json ./package-lock.json
@@ -34,6 +30,9 @@ COPY --chown=node:node --from=prod-deps /code/node_modules ./node_modules
 
 ARG COMMIT_SHA
 ENV COMMIT_SHA=$COMMIT_SHA
+ENV PORT=3000
+ENV HOST=0.0.0.0
+ENV NODE_ENV=production
 
 USER node
 EXPOSE $PORT
