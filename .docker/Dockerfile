@@ -1,19 +1,16 @@
 FROM node:20-alpine AS base
 WORKDIR /code
 
-RUN apk update
-RUN apk add --no-cache libc6-compat dumb-init
-
 FROM base AS deps
 
-COPY package.json package-lock.json .
+COPY package.json package-lock.json ./
 RUN npm ci
 
 FROM deps AS prod-deps
 
 RUN npm prune --production
 
-FROM base AS build
+FROM deps AS build
 
 COPY . .
 COPY --from=deps /code/node_modules ./node_modules
@@ -22,6 +19,9 @@ RUN npm run build
 
 FROM base AS runtime
 WORKDIR /code
+
+RUN apk update
+RUN apk add --no-cache libc6-compat dumb-init
 
 COPY --chown=node:node --from=build /code/build ./build
 COPY --chown=node:node --from=prod-deps /code/package.json ./package.json
