@@ -5,8 +5,9 @@ import { useSocket } from '~/context';
 
 export const useBlocks = (initialData?: Block[] | null, options?: { limit?: number }) => {
   const limit = options?.limit || 100;
-  const [blocks, setBlocks] = useState<Block[]>(initialData || []);
   const socket = useSocket();
+  const [blocks, setBlocks] = useState<Block[]>(initialData || []);
+  const block = useMemo(() => blocks[0], [blocks]);
 
   const addBlock = useCallback(
     async (block: Block) => {
@@ -23,13 +24,9 @@ export const useBlocks = (initialData?: Block[] | null, options?: { limit?: numb
 
   useEffect(() => {
     socket?.on('block', (id) => {
-      socket.getBlock(id).then((block) => {
-        if (block) {
-          addBlock(block);
-        }
-      });
+      socket.getBlock(id).then((block) => addBlock(block!));
     });
   }, [socket, addBlock]);
 
-  return useMemo(() => ({ blocks, block: blocks?.[blocks.length - 1] }), [blocks]);
+  return useMemo(() => ({ blocks, block }), [blocks, block]);
 };

@@ -1,7 +1,7 @@
 import type { MetaFunction } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { format, formatDistanceToNowStrict, fromUnixTime } from 'date-fns';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import { useBlocks } from '~/hooks/use-blocks';
 import { useNetwork } from '~/hooks/use-network';
@@ -24,9 +24,9 @@ export const loader = async () => {
 
 export default function Index() {
   const data = useLoaderData<typeof loader>();
+  const { blocks, block } = useBlocks([data.block]);
   const network = useNetwork();
   const progress = useSyncStatus();
-  const { blocks, block } = useBlocks([data.block]);
   const peers = usePeers();
   const { version, platform } = useVersion();
 
@@ -54,7 +54,7 @@ export default function Index() {
       },
       {
         label: 'Block',
-        value: block?.number ? `#${formatBlockNumber(block?.number)}` : 'Unknown',
+        value: `#${formatBlockNumber(block.number)}`,
       },
       {
         label: 'Sync status',
@@ -62,9 +62,7 @@ export default function Index() {
       },
       {
         label: 'Synced until',
-        value: block?.timestamp
-          ? format(fromUnixTime(block?.timestamp), 'MMM dd yyyy, HH:mm:ss')
-          : 'Unknown',
+        value: format(fromUnixTime(block.timestamp), 'MMM dd yyyy, HH:mm:ss'),
       },
     ];
   }, [network, progress, block, peers, version, platform]);
