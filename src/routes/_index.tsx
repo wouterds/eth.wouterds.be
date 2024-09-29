@@ -5,8 +5,7 @@ import { useMemo } from 'react';
 
 import { useBlocks, useNetwork, usePeers, useSyncStatus, useVersion } from '~/hooks';
 import { getLatestBlock } from '~/services/geth-node';
-import { formatBlockNumber } from '~/utils/format-block-number';
-import { hexToAscii } from '~/utils/hex-to-ascii';
+import { formatBlockNumber, hexToAscii } from '~/utils';
 
 export const meta: MetaFunction = () => {
   return [{ title: 'eth.wouterds.be' }];
