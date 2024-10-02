@@ -21,7 +21,7 @@ services:
   geth:
     image: ethereum/client-go
     container_name: be.wouterds.eth--geth
-    mem_limit: 16gb
+    mem_limit: 24gb
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
@@ -64,7 +64,7 @@ services:
 
   lighthouse:
     image: sigp/lighthouse
-    mem_limit: 16gb
+    mem_limit: 24gb
     container_name: be.wouterds.eth--lighthouse
     restart: unless-stopped
     ports:
