@@ -51,7 +51,7 @@ services:
       - --ws.port=8546
       - --ws.api=eth,net,web3
       - --ws.origins=*
-      - --syncmode=full
+      - --syncmode=snap
       - --datadir=/root/.ethereum
       - --authrpc.addr=0.0.0.0
       - --authrpc.port=8551
