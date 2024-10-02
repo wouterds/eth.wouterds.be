@@ -58,6 +58,8 @@ services:
       - --authrpc.vhosts=*
       - --authrpc.jwtsecret=/root/.ethereum/jwt.hex
       - --discovery.dns=eth.wouterds.be
+      - --cache=4096
+      - --maxpeers=100
     networks:
       - internal
       - proxy
