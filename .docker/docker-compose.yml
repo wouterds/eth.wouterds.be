@@ -15,7 +15,7 @@ services:
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
       - "traefik.docker.network=proxy"
     networks:
-      - internal
+      - eth-node
       - proxy
 
   geth:
@@ -40,7 +40,6 @@ services:
       - "8546:8546"
     volumes:
       - /data/eth-node.geth:/root/.ethereum
-      - ./jwt.hex:/root/.ethereum/jwt.hex
     command:
       - --http
       - --http.addr=0.0.0.0
@@ -53,44 +52,15 @@ services:
       - --ws.origins=*
       - --syncmode=snap
       - --datadir=/root/.ethereum
-      - --authrpc.addr=0.0.0.0
-      - --authrpc.port=8551
-      - --authrpc.vhosts=*
-      - --authrpc.jwtsecret=/root/.ethereum/jwt.hex
       - --discovery.dns=eth.wouterds.be
       - --cache=4096
       - --maxpeers=100
     networks:
-      - internal
+      - eth-node
       - proxy
-
-  lighthouse:
-    image: sigp/lighthouse
-    mem_limit: 24gb
-    container_name: be.wouterds.eth--lighthouse
-    restart: unless-stopped
-    ports:
-      - "9000:9000/tcp"
-      - "9000:9000/udp"
-    volumes:
-      - /data/eth-node.lighthouse:/root/.lighthouse
-      - ./jwt.hex:/root/.lighthouse/jwt.hex
-    command:
-      - lighthouse
-      - bn
-      - --network=mainnet
-      - --execution-endpoint=http://geth:8551
-      - --execution-jwt=/root/.lighthouse/jwt.hex
-      - --checkpoint-sync-url=https://beaconstate.info
-      - --http
-      - --http-address=0.0.0.0
-    depends_on:
-      - geth
-    networks:
-      - internal
 
 networks:
   proxy:
     external: true
-  internal:
+  eth-node:
     name: eth-node
