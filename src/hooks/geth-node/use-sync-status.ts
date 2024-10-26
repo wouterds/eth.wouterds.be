@@ -10,10 +10,12 @@ export const useSyncStatus = () => {
 
   useEffect(() => {
     socket?.send('eth_syncing', []).then((syncing) => {
-      const currentBlock = syncing.currentBlock;
-      const highestBlock = syncing.highestBlock;
+      if (syncing === false) {
+        setProgress(100);
+        return;
+      }
 
-      setProgress(Math.round((currentBlock / highestBlock) * 1_000_000) / 10_000);
+      setProgress(Math.round((syncing.currentBlock / syncing.highestBlock) * 1_000_000) / 10_000);
     });
   }, [tick, socket]);
 

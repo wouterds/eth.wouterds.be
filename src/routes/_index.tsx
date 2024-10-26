@@ -53,7 +53,7 @@ export default function Index() {
       },
       {
         label: 'Sync status',
-        value: progress ? `${progress.toFixed(4)}%` : 'Unknown',
+        value: progress ? `${progress.toFixed(2)}%` : 'Unknown',
       },
       {
         label: 'Synced until',
