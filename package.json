@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@remix-run/node": "^2.12.1",
-    "@remix-run/react": "^2.12.1",
+    "@remix-run/react": "^2.13.1",
     "@remix-run/serve": "^2.13.1",
     "@uidotdev/usehooks": "^2.4.1",
     "date-fns": "^4.1.0",
