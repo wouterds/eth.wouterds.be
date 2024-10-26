@@ -4,7 +4,7 @@ import { format, formatDistanceToNowStrict, fromUnixTime } from 'date-fns';
 import { useMemo } from 'react';
 
 import { useBlocks, useNetwork, usePeers, useSyncStatus, useVersion } from '~/hooks';
-import { getLatestBlock } from '~/services/geth-node';
+import { getLatestBlocks } from '~/services/geth-node';
 import { formatBlockNumber, hexToAscii } from '~/utils';
 
 export const meta: MetaFunction = () => {
@@ -12,14 +12,14 @@ export const meta: MetaFunction = () => {
 };
 
 export const loader = async () => {
-  const block = await getLatestBlock();
+  const initialBlocks = await getLatestBlocks(20);
 
-  return { block };
+  return { initialBlocks };
 };
 
 export default function Index() {
   const data = useLoaderData<typeof loader>();
-  const { blocks, block } = useBlocks([data.block]);
+  const { blocks, block } = useBlocks(data.initialBlocks);
   const network = useNetwork();
   const progress = useSyncStatus();
   const peers = usePeers();
